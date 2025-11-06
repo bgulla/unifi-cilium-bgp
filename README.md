@@ -12,7 +12,7 @@ This directory contains the configuration files needed to set up BGP peering bet
 ## Prerequisites
 
 1. **UDM Pro Firmware**: UniFi OS 4.1.13+ (for native BGP support)
-2. **Cilium Version**: 1.14+ (you have 1.18.0 ✓)
+2. **Cilium Version**: 1.14+ 
 3. **Network Connectivity**: Kubernetes nodes must have connectivity to VLAN 3
 
 ## Installation Steps
@@ -23,7 +23,7 @@ This directory contains the configuration files needed to set up BGP peering bet
 2. Go to **Settings → Routing → BGP**
 3. Click **Create New** or **Add BGP Configuration**
 4. Upload the `udm-pro-bgp-config.conf` file
-5. **Important**: Edit the neighbor IPs in the config to match your actual Kubernetes node IPs
+5. **Important**: Edit the neighbor IPs in the config to match your actual Kubernetes node IPs. YOU MUST LIST OUT EACH AND EVERY KUBERNETES HOST IP. No Wildcards, no CIDRs. Yes I agree that it is annoying.
 
 ### Step 2: Enable Cilium BGP Control Plane
 
@@ -56,20 +56,42 @@ kubectl apply -f cilium-bgp-peering-policy.yaml
 
 ### Step 4: Verify BGP Peering
 
-**On Kubernetes:**
+**Check BGP Session State (Established vs Idle):**
+
+The most important check is whether the BGP session is **established** or **idle**:
 
 ```bash
-# Check Cilium BGP status
+# Check BGP peer session state - look for "established" in the Session column
+kubectl get pods -n kube-system -l k8s-app=cilium -o name | head -1 | \
+  xargs -I {} kubectl exec -n kube-system {} -c cilium-agent -- cilium bgp peers
+```
+
+Expected output when working:
+```
+Local AS   Peer AS   Peer Address   Session       Uptime   Family         Received   Advertised
+64501      64500     10.0.1.1:179   established   5m12s    ipv4/unicast   1          2
+```
+
+**Session States:**
+- **established**: BGP peering is working correctly ✓
+- **idle**: BGP cannot connect to peer (check firewall, UDM Pro config, node IPs)
+- **active**: Attempting to establish connection
+- **connect**: TCP connection in progress
+
+**Additional Kubernetes Checks:**
+
+```bash
+# Check Cilium BGP resources
 kubectl get ciliumbgppeeringpolicies
 kubectl get ciliumloadbalancerippools
 kubectl get ciliumbgpadvertisements
 
-# Check Cilium logs for BGP
-kubectl -n kube-system logs -l k8s-app=cilium | grep -i bgp
+# Check Cilium logs for BGP errors
+kubectl -n kube-system logs -l k8s-app=cilium --tail=100 | grep -i bgp
 
-# Use Cilium CLI for detailed BGP status
-cilium bgp peers
-cilium bgp routes
+# View advertised routes
+kubectl get pods -n kube-system -l k8s-app=cilium -o name | head -1 | \
+  xargs -I {} kubectl exec -n kube-system {} -c cilium-agent -- cilium bgp routes available ipv4 unicast
 ```
 
 **On UDM Pro (SSH):**
@@ -78,9 +100,13 @@ cilium bgp routes
 # Enter vtysh shell
 vtysh
 
-# Check BGP status
+# Check BGP session summary - look for "Established" state
 show ip bgp summary
+
+# View detailed neighbor info
 show ip bgp neighbors
+
+# Check learned BGP routes
 show ip route bgp
 ```
 
@@ -132,18 +158,32 @@ curl http://10.0.3.XXX
 
 ### BGP Sessions Not Establishing
 
-1. **Check node connectivity to VLAN 3:**
+**First, check the BGP session state:**
+
+```bash
+kubectl get pods -n kube-system -l k8s-app=cilium -o name | head -1 | \
+  xargs -I {} kubectl exec -n kube-system {} -c cilium-agent -- cilium bgp peers
+```
+
+If the session shows **"idle"** instead of **"established"**, follow these steps:
+
+1. **Verify UDM Pro has your node IP in BGP config:**
+   - Each Kubernetes node IP must be explicitly listed in `udm-pro-bgp-config.conf`
+   - Get your node IPs: `kubectl get nodes -o wide`
+   - Check the UDM Pro BGP config includes all node IPs as neighbors
+   - Re-upload the config if you added/changed nodes
+
+2. **Check node connectivity to UDM Pro:**
    ```bash
-   # From a Kubernetes node
-   ping 10.0.3.1
-   telnet 10.0.3.1 179
+   # From your local machine (testing BGP port 179)
+   nc -zv 10.0.1.1 179
    ```
 
-2. **Verify firewall rules on UDM Pro:**
-   - Allow TCP port 179 from Kubernetes node IPs
+3. **Verify firewall rules on UDM Pro:**
+   - Allow TCP port 179 from Kubernetes node IPs to UDM Pro
    - Check Settings → Firewall for rules blocking BGP
 
-3. **Check Cilium BGP logs:**
+4. **Check Cilium BGP logs for connection errors:**
    ```bash
    kubectl -n kube-system logs -l k8s-app=cilium --tail=100 | grep -i bgp
    ```

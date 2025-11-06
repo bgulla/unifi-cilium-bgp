@@ -1,0 +1,15 @@
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: k8s-loadbalancer-pool
+spec:
+  blocks:
+  - start: 10.0.3.10
+    stop: 10.0.3.254  # 245 usable IPs
+  # Reserves 10.0.3.1 for gateway and IPs below .10
+  serviceSelector:
+    matchLabels:
+      # This pool will be used for services with this label
+      # Or remove serviceSelector to make it the default pool for all LoadBalancer services
+      io.cilium/lb-pool: main
