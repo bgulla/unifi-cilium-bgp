@@ -3,7 +3,28 @@
 This directory contains the configuration files needed to set up BGP peering between Cilium and your UDM Pro for LoadBalancer services.
 
 ## Architecture
+```
+┌─────────────────────────────────────────┐
+│ UDM Pro (10.0.3.1)                      │
+│ ASN: 64500                              │
+│ Role: BGP Router                        │
+└────────────┬────────────────────────────┘
+             │ BGP Peering (TCP 179)
+             │ Advertises: Routes to 10.0.3.100/28
+             │
+    ┌────────┴────────┬───────────────────┐
+    │                 │                   │
+┌───▼────┐      ┌─────▼───┐      ┌───────▼──┐
+│ tpi1   │      │ tpi2    │      │ tpi3     │
+│ 10.0.1 │      │ 10.0.1  │      │ 10.0.1   │
+│ .117   │      │ .142    │      │ .103     │
+└────────┘      └─────────┘      └──────────┘
+  Cilium BGP Speaker (ASN 64501)
 
+  Advertises LoadBalancer IPs:
+  10.0.3.100 - 10.0.3.111
+
+```
 - **UDM Pro**: Acts as BGP router (ASN 64500) with router ID 10.0.3.1
 - **Cilium**: Acts as BGP speaker (ASN 64501) on each Kubernetes node
 - **LoadBalancer IP Pool**: 10.0.3.100/28 (10.0.3.100 - 10.0.3.111)
