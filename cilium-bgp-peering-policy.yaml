@@ -9,18 +9,18 @@ spec:
       # Apply to all nodes - adjust if you want specific nodes only
       kubernetes.io/os: linux
   virtualRouters:
-  - localASN: 64501
-    exportPodCIDR: false  # Set to true if you want to advertise pod CIDRs
-    serviceSelector:
-      matchLabels:
-        io.cilium/lb-pool: main
-    neighbors:
-    - peerAddress: '10.0.1.1/32'
-      peerASN: 64500
-      eBGPMultihopTTL: 10
-      connectRetryTimeSeconds: 120
-      holdTimeSeconds: 90
-      keepAliveTimeSeconds: 30
-      gracefulRestart:
-        enabled: true
-        restartTimeSeconds: 120
+    - localASN: 64501
+      exportPodCIDR: false # Set to true if you want to advertise pod CIDRs
+      serviceSelector:
+        matchLabels:
+          io.cilium/lb-pool: main
+      neighbors:
+        - peerAddress: "10.0.1.1/32"
+          peerASN: 64500
+          eBGPMultihopTTL: 10
+          connectRetryTimeSeconds: 120
+          holdTimeSeconds: 90
+          keepAliveTimeSeconds: 30
+          gracefulRestart:
+            enabled: true
+            restartTimeSeconds: 120

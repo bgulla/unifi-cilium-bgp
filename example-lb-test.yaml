@@ -3,12 +3,12 @@ kind: Service
 metadata:
   name: test-lb
   labels:
-    io.cilium/lb-pool: main  # Use the IP pool
+    io.cilium/lb-pool: main # Use the IP pool
 spec:
   type: LoadBalancer
   ports:
-  - port: 80
-    targetPort: 80
+    - port: 80
+      targetPort: 80
   selector:
     app: nginx
 ---
@@ -20,7 +20,7 @@ metadata:
     app: nginx
 spec:
   containers:
-  - name: nginx
-    image: nginx
-    ports:
-    - containerPort: 80
+    - name: nginx
+      image: nginx
+      ports:
+        - containerPort: 80
