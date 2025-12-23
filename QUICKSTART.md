@@ -3,12 +3,12 @@
 ## Your Current Setup
 
 - **Kubernetes Nodes**:
-  - tpi1: 10.0.1.117
-  - tpi2: 10.0.1.142
-  - tpi3: 10.0.1.103
-- **Cilium Version**: 1.18.0 ✓
-- **Target VLAN**: VLAN 3 (10.0.3.0/24, gateway 10.0.3.1)
-- **LoadBalancer IP Range**: 10.0.3.100-10.0.3.111
+  - tpi1: `10.0.1.117`
+  - tpi2: `10.0.1.142`
+  - tpi3: `10.0.1.103`
+- **Cilium Version**: `1.18.0` ✓
+- **Target VLAN**: VLAN 3 (`10.0.3.0/24`, `gateway 10.0.3.1`)
+- **LoadBalancer IP Range**: `10.0.3.100-10.0.3.111`
 
 ## Network Connectivity Options
 
@@ -19,6 +19,7 @@ Your nodes are on 10.0.1.x but need to peer with 10.0.3.1. You have two options:
 Since your UDM Pro already routes between VLANs, BGP peering should work across VLANs:
 
 1. **Update** `udm-pro-bgp-config.conf` to use your actual node IPs:
+
    ```
    neighbor 10.0.1.117 peer-group K8S
    neighbor 10.0.1.142 peer-group K8S
@@ -26,17 +27,18 @@ Since your UDM Pro already routes between VLANs, BGP peering should work across 
    ```
 
 2. **Update** `cilium-bgp-peering-policy.yaml`:
+
    ```yaml
    neighbors:
-   - peerAddress: '10.0.3.1/32'
-     peerASN: 64500
-     peerPort: 179
+    - peerAddress: '10.0.3.1/32'
+      peerASN: 64500
+      peerPort: 179
    ```
 
 3. **Ensure** UDM Pro firewall allows:
-   - Source: 10.0.1.0/24 (your node network)
-   - Destination: 10.0.3.1
-   - Port: TCP 179 (BGP)
+   - Source: `10.0.1.0/24` (your node network)
+   - Destination: `10.0.3.1`
+   - Port: `TCP 179` (BGP)
 
 ### Option B: Add Nodes to VLAN 3 (More Complex)
 
@@ -82,9 +84,11 @@ Or edit the Cilium ConfigMap directly and restart Cilium pods.
 ### 3. Configure UDM Pro
 
 1. Log into UniFi Network UI
-2. Go to **Settings → Routing → BGP**
-3. Upload the modified `udm-pro-bgp-config.conf`
-4. Verify under **Settings → Firewall** that BGP traffic is allowed
+2. Go to **Settings → Policy Table (First Icon under Policy Engine) → Dynamic Routing**
+3. Select `BGP`
+4. Enter a name (ex: Cilium BGP)
+5. Upload the modified `udm-pro-bgp-config.conf`
+6. Verify under **Settings → Firewall** that BGP traffic is allowed
 
 ### 4. Apply Cilium BGP Resources
 
@@ -215,6 +219,6 @@ kubectl get ciliumbgpadvertisements -o yaml
 
 ## Support Resources
 
-- Cilium BGP Docs: https://docs.cilium.io/en/stable/network/bgp-control-plane/
-- Cilium Slack: #cilium-users
-- Your setup: 3 nodes, Cilium 1.18.0, UDM Pro on 10.0.3.1
+- [Cilium BGP Docs](https://docs.cilium.io/en/stable/network/bgp-control-plane/
+- Cilium Slack: `#cilium-users`
+- Your setup: 3 nodes, Cilium 1.18.0+, UDM Pro on 10.0.3.1+

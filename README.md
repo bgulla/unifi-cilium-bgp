@@ -253,12 +253,14 @@ If the session shows **"idle"** instead of **"established"**, follow these steps
 **CRITICAL**: The UDM Pro BGP configuration does **NOT** support wildcards or CIDR ranges. You **must explicitly list each Kubernetes node IP** that will peer with the UDM Pro.
 
 To find your node IPs:
+
 ```bash
 kubectl get nodes -o wide
 ```
 
 Then update `udm-pro-bgp-config.conf` with each node IP individually:
-```
+
+```conf
 neighbor 10.0.1.169 peer-group K8S  # Replace with actual node IP
 neighbor 10.0.1.XXX peer-group K8S  # Add each additional node
 ```
@@ -272,6 +274,7 @@ neighbor 10.0.1.XXX peer-group K8S  # Add each additional node
 If you want to advertise Pod CIDRs over BGP (for direct pod-to-pod routing):
 
 Edit `cilium-bgp-peering-policy.yaml`:
+
 ```yaml
 exportPodCIDR: true  # Change from false to true
 ```
@@ -279,6 +282,7 @@ exportPodCIDR: true  # Change from false to true
 ### Add Multiple IP Pools
 
 Edit `loadbalancer-ip-pool.yaml` to add more CIDR blocks:
+
 ```yaml
 spec:
   blocks:
@@ -318,6 +322,7 @@ spec:
 ```
 
 Then label your services:
+
 ```yaml
 metadata:
   labels:
@@ -328,4 +333,5 @@ metadata:
 
 - [Cilium BGP Control Plane Documentation](https://docs.cilium.io/en/stable/network/bgp-control-plane/)
 - [UniFi BGP Configuration](https://help.ui.com/hc/en-us/articles/16271338193559)
+
 # unifi-cilium-bgp
